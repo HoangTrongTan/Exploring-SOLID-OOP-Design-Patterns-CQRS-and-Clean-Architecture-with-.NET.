@@ -1,0 +1,79 @@
+# ─── Build output ────────────────────────────────────────────────────────────
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+logs/
+
+# ─── Visual Studio ────────────────────────────────────────────────────────────
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.vcxproj.filters
+
+# ─── Rider / JetBrains ───────────────────────────────────────────────────────
+.idea/
+*.sln.iml
+
+# ─── VS Code ──────────────────────────────────────────────────────────────────
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# ─── .NET / NuGet ────────────────────────────────────────────────────────────
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+packages/
+# NuGet cache (không cần commit)
+*.nuget.props
+*.nuget.targets
+
+# ─── ASP.NET Core ────────────────────────────────────────────────────────────
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
+
+# ─── Environment / Secrets ───────────────────────────────────────────────────
+.env
+.env.*
+*.env
+secrets.json
+
+# ─── Docker ──────────────────────────────────────────────────────────────────
+# (docker-compose.yml và Dockerfile nên commit)
+
+# ─── Database / Migrations generated ────────────────────────────────────────
+# Nếu không muốn commit migrations tự sinh:
+# Migrations/
+
+# ─── Test results ────────────────────────────────────────────────────────────
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# ─── OS ──────────────────────────────────────────────────────────────────────
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# ─── Misc ────────────────────────────────────────────────────────────────────
+*.bak
+*.tmp
+*.temp

@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CrudPractice.API/CrudPractice.API.csproj" />
+    <Project Path="src/CrudPractice.Application/CrudPractice.Application.csproj" />
+    <Project Path="src/CrudPractice.Domain/CrudPractice.Domain.csproj" />
+    <Project Path="src/CrudPractice.Infrastructure/CrudPractice.Infrastructure.csproj" />
+  </Folder>
+</Solution>

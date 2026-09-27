@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  # ─── PostgreSQL Database ────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: crudpractice_postgres
+    environment:
+      POSTGRES_DB: crudpractice_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ─── ASP.NET Core API ───────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: crudpractice_api
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=crudpractice_db;Username=postgres;Password=postgres
+    volumes:
+      # Hot reload: mount source vào container
+      - .:/app
+      - /app/src/CrudPractice.API/bin
+      - /app/src/CrudPractice.API/obj
+      - /app/src/CrudPractice.Application/bin
+      - /app/src/CrudPractice.Application/obj
+      - /app/src/CrudPractice.Domain/bin
+      - /app/src/CrudPractice.Domain/obj
+      - /app/src/CrudPractice.Infrastructure/bin
+      - /app/src/CrudPractice.Infrastructure/obj
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

@@ -1,0 +1,17 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
+
+WORKDIR /app
+
+COPY . .
+
+RUN dotnet restore "CrudPractice.slnx"
+
+WORKDIR /app/src/CrudPractice.API
+
+EXPOSE 8080
+
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+ENV ASPNETCORE_HTTP_PORTS=8080
+ENV ASPNETCORE_ENVIRONMENT=Development
+
+CMD ["dotnet", "watch", "run", "--non-interactive", "--no-launch-profile"]

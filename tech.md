@@ -180,5 +180,60 @@ Domain không biết gì về EF Core, HTTP, hay bất kỳ framework nào.
 5. **Sau mỗi bài** → update bảng tracking ở trên
 
 ---
+# Yêu cầu tính năng: Lấy danh sách Message theo Room (CQRS Query + Read Model)
+
+> File này là **spec/yêu cầu** — không phải code giải sẵn. Bạn tự viết code vào project theo mô tả dưới đây, chạy thử, rồi mình review lại phần bạn viết.
+
+---
+
+## 1. Bối cảnh / Vấn đề cần giải quyết
+
+Hàm `GetByRoomIdAsync` hiện tại (dùng Dapper multi-mapping `<Message, User, Message>`) đang có 2 vấn đề:
+
+1. Phải dùng **Reflection** để gán `Message.Sender` vì property này là `private set` (Domain Entity, đúng theo DDD nhưng không hợp để Dapper tự map).
+2. Đang trộn lẫn **Query side** và **Command side** — trả thẳng ra `Message` (Domain Entity) thay vì tách riêng theo tinh thần **CQRS** đã học.
+
+**Mục tiêu:** viết lại tính năng này theo đúng CQRS — tách hẳn 1 luồng đọc riêng, không đụng tới Domain Entity, không cần Reflection.
+
+---
+
+## 2. Việc cần làm (theo từng layer)
+
+### a. Application layer
+
+- Tạo 1 **Read Model** (DTO thuần, không phải Domain Entity) chứa đủ field cần hiển thị cho UI: nội dung tin nhắn, thời gian, thông tin người gửi đã "làm phẳng" (flatten) sẵn — không lồng object `User` bên trong.
+- Tạo 1 **Query** (dùng MediatR `IRequest<T>`) nhận `RoomId` + tham số phân trang.
+- Tạo 1 **Handler** xử lý Query đó, gọi qua 1 interface Repository **riêng cho Query** (không dùng chung interface Repository của Command side).
+- Định nghĩa interface Repository riêng cho Query (đặt tên rõ ràng để phân biệt với Repository của Command, ví dụ có hậu tố `QueryRepository`).
+
+### b. Infrastructure layer
+
+- Implement interface Query Repository ở trên bằng Dapper, raw SQL join giữa bảng message và bảng user.
+- **Không dùng multi-mapping `<T1, T2, TReturn>` nữa** — thay vào đó SELECT thẳng ra đúng tên field khớp với Read Model (1-1 mapping tự động của Dapper, không cần map thủ công, không cần Reflection).
+- Đảm bảo `CancellationToken` được truyền xuyên suốt — từ chỗ mở connection **tới cả** chỗ thực thi câu query (không chỉ dừng ở việc mở connection).
+- Kiểm tra lại lifetime đăng ký DI của nguồn kết nối DB (data source) — phải đảm bảo pooling hoạt động đúng, không bị tạo mới pool mỗi request.
+
+### c. API layer
+
+- Expose 1 endpoint GET nhận `roomId` (route) + `limit`, `offset` (query string), gọi Query qua MediatR, trả về danh sách Read Model.
+
+---
+
+## 3. Các trường hợp cần tự hỏi khi viết code (gợi ý, không cho sẵn đáp án)
+
+Khi viết xong, tự kiểm tra các câu hỏi sau — đây cũng chính là các điểm mình sẽ soi kỹ lúc review:
+
+1. Nếu client **hủy request** giữa chừng (đóng tab, timeout) thì câu SQL đang chạy dưới DB có bị hủy theo không, hay vẫn chạy tới cùng?
+2. Nếu `limit` được client truyền `999999` hoặc số âm thì điều gì xảy ra? Đã chặn chưa?
+3. Nếu room có **hàng trăm nghìn tin nhắn**, cách phân trang hiện tại (`OFFSET`) có còn nhanh không khi offset lớn?
+4. Người gọi API có **bắt buộc phải là thành viên của room đó** thì mới xem được tin nhắn không, hay bất kỳ ai biết `roomId` cũng đọc được?
+5. Nguồn kết nối DB (`NpgsqlDataSource` hoặc tương đương) đang đăng ký DI với lifetime nào — có chắc là đúng không, hay copy nhầm thói quen từ `DbContext`?
+6. Read Model có vô tình lộ field nội bộ nào không nên hiển thị ra API không (ví dụ cờ `is_deleted`, id nội bộ...)?
+
+---
+
+## 4. Deliverable
+
+Sau khi viết xong, nhờ review code (Read Model, Query, Handler, Repository interface + implementation, endpoint) — mình sẽ review theo đúng các chủ đề đã trao đổi (SOLID, DDD, CQRS, Repository Pattern...), chỉ ra chỗ nào viết kiểu "được nhưng nhỡ sau này X xảy ra thì sao", và gợi ý sửa.
 
 *File này được TechLead maintain. Khi chat mới, đọc file này để lấy context.*
